@@ -1,0 +1,12 @@
+[requires]
+glfw/3.3.8
+glad/0.1.36
+imgui/cci.20230105+1.89.2.docking
+gtest/1.14.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout
