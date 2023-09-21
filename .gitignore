@@ -1,6 +1,7 @@
 # Created by https://www.toptal.com/developers/gitignore/api/c++,cmake,conan,vim,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,cmake,conan,vim,visualstudiocode
 
+.cache/
 ### C++ ###
 # Prerequisites
 *.d
