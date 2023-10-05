@@ -5,18 +5,102 @@
 #include <imgui_impl_opengl3.h>
 
 #include <iostream>
+#include <string>
+#include <fstream>
+
+#define CHECK_GL_ERROR() \
+    do { \
+        GLenum error = glGetError(); \
+        if (error != GL_NO_ERROR) { \
+            std::cerr << "OpenGL Error " << error << " at line " << __LINE__ << std::endl; \
+        } \
+    } while (false)
+
+
 
 // Window dimensions
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-int main()
+static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
-    glfwSetErrorCallback([](int error, const char* description)
-                         { fprintf(stderr, "GLFW Error (%d): %s\n", error, description); });
+    unsigned int id = glCreateShader(type);
+    const char* src = source.c_str();
+
+    // Pass the shader source code to OpenGL
+    glShaderSource(id, 1, &src, nullptr);
+    glCompileShader(id);
+
+    // Error handling
+    int result;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+    if (result == GL_FALSE) {
+        // Get the length of the error message
+        int length;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+
+        // Get the error message
+        char* message = (char*)alloca(length * sizeof(char));
+        glGetShaderInfoLog(id, length, &length, message);
+
+        // Print the error message
+        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!"
+                  << std::endl;
+        std::cout << message << std::endl;
+
+        // Delete the shader
+        glDeleteShader(id);
+        return 0;
+    }
+
+    return id;
+
+}
+
+static std::string ReadShader(const std::string& path)
+{
+    std::ifstream shaderFile(path, std::ios::in);
+
+    std::string shaderCode;
+    if (shaderFile.is_open()) {
+        std::string line;
+        while (getline(shaderFile, line)) {
+            shaderCode += "\n" + line;
+        }
+        shaderFile.close();
+    } else {
+        std::cout << "Unable to open file " << path << std::endl;
+    }
+
+    return shaderCode;
+}
+
+static int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+{
+    unsigned int program = glCreateProgram();
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+
+
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
+
+int
+main()
+{
+    glfwSetErrorCallback(
+      [](int error, const char* description) { fprintf(stderr, "GLFW Error (%d): %s\n", error, description); });
     // Initialize GLFW
-    if (!glfwInit())
-    {
+    if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return -1;
     }
@@ -30,8 +114,7 @@ int main()
 
     // Create the window
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGLApp", nullptr, nullptr);
-    if (!window)
-    {
+    if (!window) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -39,8 +122,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // Initialize GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
@@ -54,31 +136,70 @@ int main()
     float clearColor[4] = { 0.45f, 0.55f, 0.60f, 1.00f };
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    // Buffer
+    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int bufferId;
+    glGenBuffers(1, &bufferId);
+
+    float positions[6] = { -0.5f, -0.5f, 0.0f, 0.5f, 0.5f, -0.5f };
+
+    // Bind buffer
+    glBindBuffer(GL_ARRAY_BUFFER, bufferId);
+
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+
+    std::string vertexShader = ReadShader("../src/shaders/vertexShader.shader");
+    std::string fragmentShader = ReadShader("../src/shaders/fragmentShader.shader");
+
+    CHECK_GL_ERROR();
+    unsigned int shader = CreateShader(vertexShader, fragmentShader);
+    glUseProgram(shader);
+
+    // Check for errors
+    CHECK_GL_ERROR();
+
+    float triangleColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+
     // Main loop
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
+    while (!glfwWindowShouldClose(window)) {
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         ImGui::Begin("Color Picker");
-        if (ImGui::ColorPicker4("Clear Color", clearColor))
-        {
-            // If the color picker value changes, set the new clear color
+        if (ImGui::ColorPicker4("Clear Color", clearColor)) {
+            glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+        }
+        if (ImGui::ColorPicker4("Triangle Color", triangleColor)) {
             glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         }
         ImGui::End();
-        glClear(GL_COLOR_BUFFER_BIT);
-
-
         // Rendering
+
+        int triangleColorLocation = glGetUniformLocation(shader, "triangleColor");
+        glUniform4f(triangleColorLocation, triangleColor[0], triangleColor[1], triangleColor[2], triangleColor[3]);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glfwSwapBuffers(window);
+        glfwPollEvents();
+
     }
+    glDeleteProgram(shader);
 
     // Cleanup and exit
     ImGui_ImplOpenGL3_Shutdown();
