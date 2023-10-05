@@ -8,14 +8,25 @@
 #include <string>
 #include <fstream>
 
-#define CHECK_GL_ERROR() \
-    do { \
-        GLenum error = glGetError(); \
-        if (error != GL_NO_ERROR) { \
-            std::cerr << "OpenGL Error " << error << " at line " << __LINE__ << std::endl; \
-        } \
-    } while (false)
+#define ASSERT(x) if (!(x)) __builtin_trap();
+#define GLCall(x) GlClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__));
 
+
+static void GlClearError()
+{
+    while (glGetError() != GL_NO_ERROR);
+}
+
+static bool GLLogCall(const char* function, const char* file, int line)
+{
+    while (GLenum error = glGetError()) {
+        std::cerr << "[OpenGL Error] (" << error << ")" << function << " " << file << ":" << line << std::endl;
+        return false;
+    }
+    return true;
+}
 
 
 // Window dimensions
@@ -94,8 +105,7 @@ static int CreateShader(const std::string& vertexShader, const std::string& frag
     return program;
 }
 
-int
-main()
+int createWindow(GLFWwindow*& window)
 {
     glfwSetErrorCallback(
       [](int error, const char* description) { fprintf(stderr, "GLFW Error (%d): %s\n", error, description); });
@@ -113,13 +123,23 @@ main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create the window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGLApp", nullptr, nullptr);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGLApp", nullptr, nullptr);
     if (!window) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
+    return 0;
+}
+
+int
+main()
+{
+    GLFWwindow* window;
+    if (createWindow(window) != 0) {
+        return -1;
+    }
 
     // Initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -134,39 +154,46 @@ main()
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
     float clearColor[4] = { 0.45f, 0.55f, 0.60f, 1.00f };
+
+    float positions[] = { 
+        -0.5f, -0.5f,
+        0.5f, -0.5f,
+        0.5f, 0.5f,
+        -0.5f, 0.5f,
+    };
+
+    unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-    glClear(GL_COLOR_BUFFER_BIT);
 
-    // Buffer
-    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    unsigned int vao; // Vertex array object
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     unsigned int bufferId;
     glGenBuffers(1, &bufferId);
-
-    float positions[6] = { -0.5f, -0.5f, 0.0f, 0.5f, 0.5f, -0.5f };
-
-    // Bind buffer
     glBindBuffer(GL_ARRAY_BUFFER, bufferId);
-
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 
+    GLCall(glEnableVertexAttribArray(0));
+
+
+    unsigned int ibo; // Index buffer object
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
     std::string vertexShader = ReadShader("../src/shaders/vertexShader.shader");
     std::string fragmentShader = ReadShader("../src/shaders/fragmentShader.shader");
 
-    CHECK_GL_ERROR();
     unsigned int shader = CreateShader(vertexShader, fragmentShader);
     glUseProgram(shader);
-
-    // Check for errors
-    CHECK_GL_ERROR();
 
     float triangleColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
@@ -178,23 +205,26 @@ main()
         ImGui::NewFrame();
 
         ImGui::Begin("Color Picker");
-        if (ImGui::ColorPicker4("Clear Color", clearColor)) {
-            glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-        }
         if (ImGui::ColorPicker4("Triangle Color", triangleColor)) {
-            glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         }
         ImGui::End();
-        // Rendering
+
+
+        GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+        GLCall(glUseProgram(shader));
 
         int triangleColorLocation = glGetUniformLocation(shader, "triangleColor");
-        glUniform4f(triangleColorLocation, triangleColor[0], triangleColor[1], triangleColor[2], triangleColor[3]);
+        GLCall(glUniform4f(triangleColorLocation, triangleColor[0], triangleColor[1], triangleColor[2], triangleColor[3]));
 
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        GLCall(glBindVertexArray(vao));
+        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // 6 is the number of indices
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glfwSwapBuffers(window);
         glfwPollEvents();
 
