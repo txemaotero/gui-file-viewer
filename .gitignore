@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/c++,cmake,conan,vim,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,cmake,conan,vim,visualstudiocode
 
+build/
+
 .cache/
 ### C++ ###
 # Prerequisites
@@ -116,3 +118,5 @@ tags
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake,conan,vim,visualstudiocode
+
+imgui.ini
