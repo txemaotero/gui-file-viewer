@@ -82,8 +82,8 @@ list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 # Definition of CMAKE_PREFIX_PATH, CMAKE_XXXXX_PATH
 # The Conan local "generators" folder, where this toolchain is saved.
 list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR} )
-list(PREPEND CMAKE_LIBRARY_PATH "/Users/txema/.conan2/p/b/glfw23ee9b0ed8839/p/lib" "/Users/txema/.conan2/p/b/glad23a9f98eef096/p/lib" "/Users/txema/.conan2/p/b/imgui88aa489e3062a/p/lib" "/Users/txema/.conan2/p/b/gtestdf9c52010daa6/p/lib")
-list(PREPEND CMAKE_INCLUDE_PATH "/Users/txema/.conan2/p/b/glfw23ee9b0ed8839/p/include" "/Users/txema/.conan2/p/b/glad23a9f98eef096/p/include" "/Users/txema/.conan2/p/b/imgui88aa489e3062a/p/include" "/Users/txema/.conan2/p/b/gtestdf9c52010daa6/p/include")
+list(PREPEND CMAKE_LIBRARY_PATH "/Users/txema/.conan2/p/b/glfw23ee9b0ed8839/p/lib" "/Users/txema/.conan2/p/b/glad23a9f98eef096/p/lib" "/Users/txema/.conan2/p/b/imgui88aa489e3062a/p/lib" "/Users/txema/.conan2/p/b/gtestdf9c52010daa6/p/lib" "/Users/txema/.conan2/p/b/spdlo8398ff65d06f8/p/lib" "/Users/txema/.conan2/p/b/fmt141d2ce271c20/p/lib")
+list(PREPEND CMAKE_INCLUDE_PATH "/Users/txema/.conan2/p/b/glfw23ee9b0ed8839/p/include" "/Users/txema/.conan2/p/b/glad23a9f98eef096/p/include" "/Users/txema/.conan2/p/b/imgui88aa489e3062a/p/include" "/Users/txema/.conan2/p/b/gtestdf9c52010daa6/p/include" "/Users/txema/.conan2/p/b/spdlo8398ff65d06f8/p/include" "/Users/txema/.conan2/p/b/fmt141d2ce271c20/p/include")
 
 
 

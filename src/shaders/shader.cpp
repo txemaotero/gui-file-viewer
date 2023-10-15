@@ -1,6 +1,3 @@
-#include <fstream>
-#include <iostream>
-
 #include "shader.h"
 #include "utils.h"
 
