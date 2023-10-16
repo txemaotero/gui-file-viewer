@@ -1,5 +1,7 @@
 #include "shader.h"
 #include "utils.h"
+#include "logging/log.h"
+
 
 static GLuint CompileShader(GLuint type, const std::string& source)
 {
@@ -95,7 +97,7 @@ void Shader::LoadFromTextFiles(const std::string& vertexShaderPath, const std::s
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
-        LOG_ERROR("%s", infoLog.data());
+        LOG_ERROR("{0}", infoLog.data());
     }
 
     glDetachShader(program, vertexShader);
@@ -127,7 +129,7 @@ GLuint Shader::CompileShader(GLenum type, const std::string& source)
 
         glDeleteShader(shader);
 
-        LOG_ERROR("%s", infoLog.data());
+        LOG_ERROR("{0}", infoLog.data());
     }
 
     return shader;

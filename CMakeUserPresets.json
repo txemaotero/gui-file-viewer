@@ -4,6 +4,7 @@
         "conan": {}
     },
     "include": [
-        "/Users/txema/github/gui-file-viewer/build/Release/generators/CMakePresets.json"
+        "/Users/txema/github/gui-file-viewer/build/Release/generators/CMakePresets.json",
+        "/Users/txema/github/gui-file-viewer/build/Debug/generators/CMakePresets.json"
     ]
 }
